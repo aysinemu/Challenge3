@@ -1,0 +1,9 @@
+ucimlrepo 
+fastapi
+uvicorn 
+aiofiles 
+python-multipart 
+jinja2
+pydantic
+pydantic-core
+pyserial
