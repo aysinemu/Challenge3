@@ -196,7 +196,7 @@
 //const float PULLEY_DIAMETER = 13.0;       
 //const float BELT_PITCH = 1.0;              
 //const float STEPS_PER_MM = STEPS_PER_REV / (PI * PULLEY_DIAMETER);
-//const float MAX_DISTANCE_MM = 670.0;       
+//const float MAX_DISTANCE_MM = 610.0;       
 //const long MAX_POSITION_STEPS = round(MAX_DISTANCE_MM * STEPS_PER_MM);
 //const int RPM = 150;                       
 //const unsigned long STEP_PERIOD_US = 60000000UL / (STEPS_PER_REV * RPM);
@@ -357,8 +357,8 @@
 //}
 //
 //void testFullDistance() {
-////  Serial.println("Testing full distance (670mm)");
-//  moveToPosition(670.0);
+////  Serial.println("Testing full distance (610mm)");
+//  moveToPosition(610.0);
 //}
 //
 //void reportCurrentPosition() {
@@ -414,6 +414,236 @@
 
 
 
+//
+//
+//#include <Arduino.h>
+//
+//#define X_STEP_PIN     2
+//#define X_DIR_PIN      5
+//#define ENABLE_PIN     8
+//#define LED_PIN        A3
+//#define V_5            A0
+//#define LED_MOTION_PIN 11
+//#define SENSOR_PIN_1   12
+//#define SENSOR_PIN_2   13
+//
+//const int STEPS_PER_REV = 3200;
+//const float PULLEY_DIAMETER = 13.0;       
+//const float BELT_PITCH = 1.0;              
+//const float STEPS_PER_MM = STEPS_PER_REV / (PI * PULLEY_DIAMETER);
+//const float MAX_DISTANCE_MM = 610.0;       
+//const long MAX_POSITION_STEPS = round(MAX_DISTANCE_MM * STEPS_PER_MM);
+//const int RPM = 150;                       
+//const unsigned long STEP_PERIOD_US = 60000000UL / (STEPS_PER_REV * RPM);
+//
+//const int OBSTACLE_CONFIRM_COUNT = 5; 
+//
+//long currentPosition = 0;  
+//const int EDGE_THRESHOLD = 50; 
+//const unsigned long EDGE_TIMEOUT = 60000; 
+//
+//unsigned long lastEdgeTime = 0;
+//int edgePassCount = 0;
+//bool ledBlinkState = false;
+//
+//const float CALIBRATION_FACTOR = 1;  
+//
+//void setup() {
+//  Serial.begin(9600);
+//  while (!Serial);  
+//  pinMode(X_STEP_PIN, OUTPUT);
+//  pinMode(X_DIR_PIN, OUTPUT);
+//  pinMode(ENABLE_PIN, OUTPUT);
+//  pinMode(LED_PIN, OUTPUT);
+//  pinMode(LED_MOTION_PIN, OUTPUT);
+//  pinMode(V_5, OUTPUT);
+//  pinMode(SENSOR_PIN_1, INPUT);
+//  pinMode(SENSOR_PIN_2, INPUT);
+//  
+//  digitalWrite(ENABLE_PIN, LOW); 
+//  analogWrite(V_5, 255);
+//  analogWrite(LED_PIN, 255); 
+//
+//  Serial.println("System Ready");
+//}
+//
+//void loop() {
+//  if (checkObstacle()) {
+//    digitalWrite(LED_MOTION_PIN, HIGH);
+//  } else {
+//    digitalWrite(LED_MOTION_PIN, LOW);
+//  }
+//
+//  checkEdgeEvent();
+//
+//  if (Serial.available()) {
+//    String input = Serial.readStringUntil('\n');
+//    input.trim();  
+//
+//    if (input.length() == 0) return;
+//
+//    Serial.print("Received: ");
+//    analogWrite(LED_PIN, 0); 
+//    Serial.println(input);
+//
+//    if (input.startsWith("COORD:")) {
+//      handleCoord(input.substring(6).c_str());  
+//    } else if (input.equalsIgnoreCase("HOME")) {
+//      homePosition();
+//    } else if (input.equalsIgnoreCase("TEST")) {
+//      testFullDistance();
+//    } else if (input.equalsIgnoreCase("WHERE")) {
+//      reportCurrentPosition();
+//    } else {
+//      Serial.println("Unknown command");
+//    }
+//
+//    Serial.println("Done");
+//    analogWrite(LED_PIN, 255); 
+//  }
+//}
+//
+//bool checkObstacle() {
+//  static int confirmCount = 0;
+//  
+//  bool obstacleDetected = (digitalRead(SENSOR_PIN_1) == LOW || digitalRead(SENSOR_PIN_2) == LOW);
+//  
+//  if (obstacleDetected) {
+//    confirmCount++;
+//    if (confirmCount >= OBSTACLE_CONFIRM_COUNT) {
+//      confirmCount = OBSTACLE_CONFIRM_COUNT; 
+//      return true;
+//    }
+//  } else {
+//    confirmCount = 0;
+//  }
+//  
+//  return false;
+//}
+//
+//void handleCoord(const char* coordData) {
+//  String coordStr = String(coordData);
+//  coordStr.trim();
+//
+//  int commaIndex = coordStr.indexOf(',');
+//  if (commaIndex != -1) {
+//    String xStr = coordStr.substring(0, commaIndex);
+//    String yStr = coordStr.substring(commaIndex + 1);
+//    xStr.trim();
+//    yStr.trim();
+//
+//    float x = xStr.toFloat();
+//    
+//    x *= CALIBRATION_FACTOR;
+//    
+//    moveToPosition(x);
+//  } else {
+//    Serial.println("Invalid COORD format. Use: COORD:x,y");
+//  }
+//}
+//
+//void moveToPosition(float targetX) {
+//  long targetPosition = round(targetX * STEPS_PER_MM);
+//  
+//  if (targetPosition < 0) targetPosition = 0;
+//  if (targetPosition > MAX_POSITION_STEPS) targetPosition = MAX_POSITION_STEPS;
+//  
+//  long stepsToMove = targetPosition - currentPosition;
+//  
+//  if (stepsToMove == 0) {
+//    Serial.println("Already at target position, no movement needed");
+//    return;
+//  }
+//  
+//  int stepDirection = (stepsToMove >= 0) ? 1 : -1;
+//  digitalWrite(X_DIR_PIN, stepsToMove >= 0 ? HIGH : LOW);
+//  
+//  long stepCount = abs(stepsToMove);
+//  long stepsMoved = 0;
+//  
+//  for (long i = 0; i < stepCount; i++) {
+//    if (checkObstacle()) {
+////      Serial.println("EMERGENCY STOP! Movement halted.");
+//      digitalWrite(LED_MOTION_PIN, HIGH);
+//      currentPosition += stepsMoved * stepDirection; 
+////      Serial.print("Stopped at ");
+////      Serial.print(currentPosition / STEPS_PER_MM);
+////      Serial.println("mm");
+//      return;
+//    }
+//    
+//    digitalWrite(X_STEP_PIN, HIGH);
+//    delayMicroseconds(10);
+//    digitalWrite(X_STEP_PIN, LOW);
+//    delayMicroseconds(STEP_PERIOD_US);
+//    
+//    stepsMoved++;
+//  }
+//  
+//  currentPosition += stepsMoved * stepDirection;
+//}
+//
+//void homePosition() {
+//  moveToPosition(0.0);
+//  currentPosition = 0; 
+//}
+//
+//void testFullDistance() {
+//  moveToPosition(610.0);
+//}
+//
+//void reportCurrentPosition() {
+//  Serial.print("Current position: ");
+//  Serial.print(currentPosition);
+//  Serial.print(" steps (");
+//  Serial.print(currentPosition / STEPS_PER_MM);
+//  Serial.println(" mm)");
+//}
+//
+//void checkEdgeEvent() {
+//  bool nearLeftEdge = (currentPosition <= EDGE_THRESHOLD);
+//  bool nearRightEdge = (currentPosition >= (MAX_POSITION_STEPS - EDGE_THRESHOLD));
+//  
+//  if (nearLeftEdge || nearRightEdge) {
+//    unsigned long currentTime = millis();
+//    
+//    if (currentTime - lastEdgeTime < EDGE_TIMEOUT) {
+//      edgePassCount++;
+//    } else {
+//      edgePassCount = 1;
+//    }
+//    
+//    lastEdgeTime = currentTime;
+//
+//    if (edgePassCount >= 2) {
+//      blinkAlertLED();
+//    }
+//  } else {
+//    edgePassCount = 0;
+//  }
+//}
+//
+//void blinkAlertLED() {
+//  static unsigned long lastBlinkTime = 0;
+//  const unsigned long BLINK_INTERVAL = 500; 
+//  
+//  unsigned long currentTime = millis();
+//  
+//  if (currentTime - lastBlinkTime >= BLINK_INTERVAL) {
+//    lastBlinkTime = currentTime;
+//    ledBlinkState = !ledBlinkState;
+//    analogWrite(LED_PIN, ledBlinkState ? 255 : 0);
+//  }
+//  
+//  if (currentTime - lastEdgeTime > EDGE_TIMEOUT) {
+//    edgePassCount = 0;
+//    analogWrite(LED_PIN, 255); 
+//  }
+//}
+
+
+
+
 
 
 #include <Arduino.h>
@@ -423,7 +653,9 @@
 #define ENABLE_PIN     8
 #define LED_PIN        A3
 #define V_5            A0
-#define LED_MOTION_PIN 11
+#define LED_MOTION_PIN A1   
+#define IR_SENSOR_PIN  11 
+#define IR_POWER_PIN   A2  
 #define SENSOR_PIN_1   12
 #define SENSOR_PIN_2   13
 
@@ -431,12 +663,11 @@ const int STEPS_PER_REV = 3200;
 const float PULLEY_DIAMETER = 13.0;       
 const float BELT_PITCH = 1.0;              
 const float STEPS_PER_MM = STEPS_PER_REV / (PI * PULLEY_DIAMETER);
-const float MAX_DISTANCE_MM = 670.0;       
+const float MAX_DISTANCE_MM = 610.0;       
 const long MAX_POSITION_STEPS = round(MAX_DISTANCE_MM * STEPS_PER_MM);
 const int RPM = 150;                       
 const unsigned long STEP_PERIOD_US = 60000000UL / (STEPS_PER_REV * RPM);
 
-// Thêm ngưỡng xác nhận vật cản
 const int OBSTACLE_CONFIRM_COUNT = 5; 
 
 long currentPosition = 0;  
@@ -457,11 +688,14 @@ void setup() {
   pinMode(ENABLE_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(LED_MOTION_PIN, OUTPUT);
+  pinMode(IR_POWER_PIN, OUTPUT);    
+  pinMode(IR_SENSOR_PIN, INPUT);   
   pinMode(V_5, OUTPUT);
   pinMode(SENSOR_PIN_1, INPUT);
   pinMode(SENSOR_PIN_2, INPUT);
   
   digitalWrite(ENABLE_PIN, LOW); 
+  digitalWrite(IR_POWER_PIN, LOW); 
   analogWrite(V_5, 255);
   analogWrite(LED_PIN, 255); 
 
@@ -495,6 +729,8 @@ void loop() {
       testFullDistance();
     } else if (input.equalsIgnoreCase("WHERE")) {
       reportCurrentPosition();
+    } else if (input.equalsIgnoreCase("AUTOHOME")) { 
+      autoHome();
     } else {
       Serial.println("Unknown command");
     }
@@ -502,6 +738,43 @@ void loop() {
     Serial.println("Done");
     analogWrite(LED_PIN, 255); 
   }
+}
+
+void autoHome() {
+  digitalWrite(IR_POWER_PIN, HIGH);
+  delay(50); // Chờ ổn định cảm biến
+
+  digitalWrite(X_DIR_PIN, LOW);
+  
+  Serial.println("Homing started...");
+  bool homingComplete = false;
+  const long maxHomingSteps = MAX_POSITION_STEPS + 10000; 
+
+  for (long i = 0; i < maxHomingSteps; i++) {
+    if (digitalRead(IR_SENSOR_PIN) == LOW) {
+      homingComplete = true;
+      break;
+    }
+
+    if (checkObstacle()) {
+      Serial.println("Obstacle detected during homing!");
+      break;
+    }
+
+    digitalWrite(X_STEP_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(X_STEP_PIN, LOW);
+    delayMicroseconds(STEP_PERIOD_US);
+  }
+
+  if (homingComplete) {
+    currentPosition = 0; 
+    Serial.println("Homing complete. Position reset to 0.");
+  } else {
+    Serial.println("Homing failed!");
+  }
+
+  digitalWrite(IR_POWER_PIN, LOW);
 }
 
 bool checkObstacle() {
@@ -563,14 +836,9 @@ void moveToPosition(float targetX) {
   long stepsMoved = 0;
   
   for (long i = 0; i < stepCount; i++) {
-    // Sử dụng hàm checkObstacle đã cải tiến (có bộ lọc nhiễu)
     if (checkObstacle()) {
-//      Serial.println("EMERGENCY STOP! Movement halted.");
       digitalWrite(LED_MOTION_PIN, HIGH);
       currentPosition += stepsMoved * stepDirection; 
-//      Serial.print("Stopped at ");
-//      Serial.print(currentPosition / STEPS_PER_MM);
-//      Serial.println("mm");
       return;
     }
     
@@ -591,7 +859,7 @@ void homePosition() {
 }
 
 void testFullDistance() {
-  moveToPosition(670.0);
+  moveToPosition(610.0);
 }
 
 void reportCurrentPosition() {

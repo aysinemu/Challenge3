@@ -12,6 +12,8 @@
     --card-bg: #2c3e50;
     --card-border: rgba(255, 255, 255, 0.1);
     --bg-gradient: linear-gradient(135deg, var(--darker) 0%, var(--secondary) 100%);
+    --autohome: #9b59b6;
+    --autohome-dark: #8e44ad;
 }
 
 * {
@@ -201,6 +203,14 @@ input:checked + .slider:before {
 
 .btn-warning:hover {
     background: #e67e22;
+}
+
+.btn-autohome {
+    background: var(--autohome);
+}
+
+.btn-autohome:hover {
+    background: var(--autohome-dark);
 }
 
 .btn:disabled {
@@ -458,6 +468,30 @@ input[type="number"]:focus {
     content: 'Waiting for DONE...';
 }
 
+.autohome-waiting::after {
+    content: 'Homing in progress...';
+}
+
+.autohome-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(155, 89, 182, 0.2);
+    font-weight: bold;
+}
+
+.autohome-status i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+
 footer {
     text-align: center;
     margin-top: 2rem;
@@ -489,6 +523,10 @@ footer {
 
 .notification.error {
     background: var(--danger);
+}
+
+.notification.autohome {
+    background: var(--autohome);
 }
 
 @keyframes slideIn {
